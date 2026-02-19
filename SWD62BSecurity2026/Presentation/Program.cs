@@ -1,8 +1,5 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
 using Presentation.Data;
 
 namespace Presentation
@@ -23,18 +20,6 @@ namespace Presentation
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             builder.Services.AddControllersWithViews();
 
-            builder.Services.AddAuthentication(options => 
-            { 
-                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme; 
-                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme; 
-            })
-            .AddCookie()
-            .AddGoogle(options => 
-            { 
-                options.ClientId = builder.Configuration["Authentication:Google:ClientId"]; 
-                options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]; 
-            });
-
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -54,7 +39,6 @@ namespace Presentation
 
             app.UseRouting();
 
-            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllerRoute(

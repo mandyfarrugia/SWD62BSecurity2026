@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="Common/Common.csproj" />
+  <Project Path="DataAccess/DataAccess.csproj" />
   <Project Path="Presentation/Presentation.csproj" />
 </Solution>
