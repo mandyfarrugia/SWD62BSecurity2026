@@ -1,0 +1,56 @@
+﻿@model Presentation.Models.ViewModels.CreateEventViewModel
+@{
+    ViewData["Title"] = "Create Event";
+}
+
+<h2>Create New Event</h2>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group">
+                <label asp-for="Price" class="control-label"></label>
+                <input asp-for="Price" class="form-control" type="number" step="0.01" />
+                <span asp-validation-for="Price" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group form-check">
+                <input asp-for="Public" class="form-check-input" type="checkbox" />
+                <label asp-for="Public" class="form-check-label"></label>
+                <span asp-validation-for="Public" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="FilePath" class="control-label"></label>
+                <input asp-for="FilePath" class="form-control" />
+                <span asp-validation-for="FilePath" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group">
+                <label asp-for="MaximumTickets" class="control-label"></label>
+                <input asp-for="MaximumTickets" class="form-control" type="number" />
+                <span asp-validation-for="MaximumTickets" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

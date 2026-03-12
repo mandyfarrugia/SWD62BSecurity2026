@@ -1,0 +1,33 @@
+﻿@model Presentation.Models.ViewModels.CreateTicketViewModel;
+
+@{
+    ViewData["Title"] = "Buy Tickets";
+}
+
+<form action="/Tickets/Buy" method="post">
+    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+    <input type="hidden" name="EventFK" value="@Model.EventFK"/>
+    <div class="form-group">
+        <label asp-for="Name" class="control-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Surname" class="control-label"></label>
+        <input asp-for="Surname" class="form-control"/>
+        <span asp-validation-for="Surname" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="IdCard" class="control-label"></label>
+        <input asp-for="IdCard" class="form-control" />
+        <span asp-validation-for="IdCard" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Quantity" class="control-label"></label>
+        <input asp-for="Quantity" class="form-control" type="number"/>
+        <span asp-validation-for="Quantity" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <input type="submit" value="Buy Ticket" class="btn btn-primary" />
+    </div>
+</form>
