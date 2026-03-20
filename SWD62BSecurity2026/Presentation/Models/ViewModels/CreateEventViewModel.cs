@@ -15,10 +15,10 @@ namespace Presentation.Models.ViewModels
 
         public bool Public { get; set; }
 
-        [TicketStockValidator]
         [Range(0, 100000, ErrorMessage = "Maximum tickets must be greater than 0 but less than 100000. If it is higher, contact administration.")]
         public int MaximumTickets { get; set; }
 
+        public IFormFile File { get; set; }
         public string FilePath { get; set; }
     }
 }

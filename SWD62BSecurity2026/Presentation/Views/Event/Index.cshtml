@@ -28,6 +28,15 @@
                 <td>@Html.DisplayFor(modelItem => item.Name)</td>
                 <td>@Html.DisplayFor(modelItem => item.Price)</td>
                 <td>@Html.DisplayFor(modelItem => item.Public)</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(item.FilePath))
+                    {
+                        <img src="@item.FilePath" alt="Event Image" style="max-width: 100px; max-height: 100px;"/>
+                    }
+                    else
+                    {
+                        <span>No file</span>
+                    }
                 <td>@Html.DisplayFor(modelItem => item.MaximumTickets)</td>
                 <td>
                     <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
