@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Presentation.Helpers;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Presentation
 {
@@ -13,13 +15,13 @@ namespace Presentation
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            //Add services to the container.
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             builder.Services.AddDbContext<TicketDbContext>(options =>
                 options.UseSqlServer(connectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-            builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
             {
                 options.SignIn.RequireConfirmedAccount = true;
                 options.Lockout.MaxFailedAccessAttempts = 3; //The idea is to block the account after the third failed consecutive login attempt.
@@ -29,8 +31,11 @@ namespace Presentation
                 options.Password.RequireLowercase = true;
                 options.Password.RequireDigit = true;
             })
+                .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<TicketDbContext>();
+
             builder.Services.AddControllersWithViews();
+            builder.Services.AddRazorPages();
 
             builder.Services.AddAuthentication()
             .AddCookie()
@@ -40,11 +45,48 @@ namespace Presentation
                 options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
             });
 
-            builder.Services.AddScoped<EventsRepository>();
+
+            builder.Services.AddScoped<EventsRepository>(
+                serviceProvider => new EventsRepository(
+                    serviceProvider.GetRequiredService<TicketDbContext>(), 
+                    serviceProvider.GetRequiredService<IConfigurationManager>()
+            ));
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            /* The incorrect approach: Yields the exception "System.InvalidOperationException: 'The service collection cannot be modified because it is read-only.'"
+            builder.Services.AddScoped<RolesManagementHelper>(serviceProvider => new RolesManagementHelper(
+                serviceProvider.GetRequiredService<RoleManager<IdentityRole>>(),
+                serviceProvider.GetRequiredService<UserManager<IdentityUser>>()
+            )); */
+
+            /* The correct approach: Call it only once in the beginning.
+             * RoleManager and UserManager are scoped service, hence they live per request.
+             * This will only execute if:
+             * - The application is stopped and re-run again.
+             * - The server restarts.
+             * - A new version of the application is deployed.
+             * - Hot reload triggers a restart.
+             * The using block creates a new dependency injection service,
+             * ensuring a safe resolution of scoped services and their disposal once done.
+             * This will not be triggered by an HTTP request unlike controller logic, 
+             * hence there is no scope by default. 
+             * Therefore, if this code is not enclosed within a dependency injection scope,
+             * it will yield the following exception:
+             * System.InvalidOperationException: 'Cannot resolve scoped service 'Microsoft.AspNetCore.Identity.RoleManager`1[Microsoft.AspNetCore.Identity.IdentityRole]' from root provider.'*/
+            using (IServiceScope? scope = app.Services.CreateScope())
+            {
+                RoleManager<IdentityRole>? roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+                UserManager<IdentityUser>? userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+                RolesManagementHelper rolesManagementHelper = new RolesManagementHelper(roleManager, userManager);
+                /* The method DefaultRolesSetup() should be idempotent (safe to run multiple times). 
+                 * Therefore, it is in one's best interests to check whether the roles already exist 
+                 * and only populate the roles if they are not yet in the database. 
+                 * This reduces any duplicate entries or any possible exceptions. */
+                rolesManagementHelper.DefaultRolesSetup();
+            }
+
+            //Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseMigrationsEndPoint();
@@ -52,7 +94,7 @@ namespace Presentation
             else
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                //The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 

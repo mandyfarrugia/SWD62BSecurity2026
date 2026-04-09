@@ -125,7 +125,6 @@ namespace Presentation.Controllers
                     uploadsFolder = Path.Combine(host.ContentRootPath, "uploads");
                 }
 
-                string uploadsFolder = Path.Combine(host.WebRootPath, "uploads");
                 Directory.CreateDirectory(uploadsFolder);
                 string uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
