@@ -2,6 +2,7 @@
 using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Presentation.ActionFilters;
 using Presentation.Models.ViewModels;
 
 namespace Presentation.Controllers
@@ -170,6 +171,16 @@ namespace Presentation.Controllers
 
             this._eventsRepository.CreateEvent(newEvent);
             TempData["success"] = "Event created successfully!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        /* An action filter is required in case you need to verify whether the user who is an organiser is actually the organiser of the event to be deleted, then you have to use and apply an authorisation filter. **/
+        [HasEventOrganiserPermission]
+        [Authorize(Roles = "organiser")] //Distinguish between an authenticated user and an anonymous user.
+        public IActionResult Delete(int id)
+        {
+            this._eventsRepository.DeleteEvent(id);
+            TempData["success"] = "Event deleted successfully";
             return RedirectToAction(nameof(Index));
         }
     }

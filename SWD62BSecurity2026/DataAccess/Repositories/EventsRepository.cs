@@ -28,7 +28,9 @@ namespace DataAccess.Repositories
         public IQueryable<Event> GetAllEvents()
         {
             string? userConnectionString = this._configuration.GetConnectionString("UserConnection");
-            this._context.Database.SetConnectionString(userConnectionString);
+
+            if (!string.IsNullOrWhiteSpace(userConnectionString))
+                this._context.Database.SetConnectionString(userConnectionString);
 
             /* Querying or any command which is run on the database henceforth will be running with the least privileged login credentials
              * which is a good security practice to limit the damage of an SQL Injection attack. */
@@ -39,6 +41,22 @@ namespace DataAccess.Repositories
         {
             this._context.Events.Add(newEvent);
             this._context.SaveChanges();
+        }
+
+        public void DeleteEvent(int id)
+        {
+            string? userConnectionString = this._configuration.GetConnectionString("DefaultConnection");
+
+            if(!string.IsNullOrWhiteSpace(userConnectionString))
+                this._context.Database.SetConnectionString(userConnectionString);
+
+            Event? eventToDelete = this._context.Events.Find(id);
+
+            if(eventToDelete != null)
+            {
+                this._context.Events.Remove(eventToDelete);
+                this._context.SaveChanges();
+            }
         }
     }
 }
