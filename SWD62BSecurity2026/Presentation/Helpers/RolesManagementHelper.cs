@@ -42,8 +42,10 @@ namespace Presentation.Helpers
 
             foreach(string defaultRole in defaultRoles)
             {
+                //Only add the role if it does not yet exist in the database to prevent duplicate entries and/or any possible exceptions.
                 if(!this._roleManager.RoleExistsAsync(defaultRole).Result)
                 {
+                    //Add the role and wait for the task to execute before proceeding to the next role to ensure that the roles are added in a sequential manner.
                     this._roleManager.CreateAsync(new IdentityRole(defaultRole)).Wait();
                 }
             }

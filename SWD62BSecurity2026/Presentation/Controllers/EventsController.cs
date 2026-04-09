@@ -3,15 +3,14 @@ using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Presentation.Models.ViewModels;
-using System.Diagnostics.Metrics;
 
 namespace Presentation.Controllers
 {
-    public class EventController : Controller
+    public class EventsController : Controller
     {
         private readonly EventsRepository _eventsRepository;
 
-        public EventController(EventsRepository eventsRepository)
+        public EventsController(EventsRepository eventsRepository)
         {
             this._eventsRepository = eventsRepository;
         }
@@ -44,9 +43,9 @@ namespace Presentation.Controllers
         [ValidateAntiForgeryToken] //Generate a server-side nonce token and validate it with the token that has to be generated on the client-side as well.
         public IActionResult Create(CreateEventViewModel createEventViewModel, IFormFile file, [FromServices] IWebHostEnvironment host)
         {
-            if(file != null)
+            if (file != null)
             {
-                if(file.Length > 5 * 1024 * 1024)
+                if (file.Length > 5 * 1024 * 1024)
                 {
                     ModelState.AddModelError("File", "File cannot exceed 5MB!");
                     return View(createEventViewModel);
@@ -58,7 +57,7 @@ namespace Presentation.Controllers
 
                 do
                 {
-                    if(Path.GetExtension(file.FileName).ToLower() == whiteListOfFileExtensions[counter])
+                    if (Path.GetExtension(file.FileName).ToLower() == whiteListOfFileExtensions[counter])
                     {
                         failedCheck = false;
                         break;
@@ -70,9 +69,9 @@ namespace Presentation.Controllers
 
                     counter++;
                 }
-                while(failedCheck && counter < whiteListOfFileExtensions.Length);
+                while (failedCheck && counter < whiteListOfFileExtensions.Length);
 
-                if(failedCheck)
+                if (failedCheck)
                 {
                     ModelState.AddModelError("File", "Only .jpg, .jpeg, and .png files are allowed!");
                     return View(createEventViewModel);
@@ -84,12 +83,12 @@ namespace Presentation.Controllers
                 bool jpgSignatureMatch = true;
                 bool pngSignatureMatch = true;
 
-                using(Stream fileStream = file.OpenReadStream())
+                using (Stream fileStream = file.OpenReadStream())
                 {
                     byte[] fileSignature = new byte[jpgFileSignature.Length];
                     fileStream.Read(fileSignature, 0, fileSignature.Length);
 
-                    if(!fileSignature.SequenceEqual(jpgFileSignature))
+                    if (!fileSignature.SequenceEqual(jpgFileSignature))
                     {
                         jpgSignatureMatch = false;
                         //ModelState.AddModelError("File", "The file content does match the expected file signature.");
@@ -109,14 +108,14 @@ namespace Presentation.Controllers
                     }
                 }
 
-                if(!jpgSignatureMatch && !pngSignatureMatch)
+                if (!jpgSignatureMatch && !pngSignatureMatch)
                 {
                     ModelState.AddModelError("File", "The file content does match the expected file format from JPG and PNG.");
                     return View(createEventViewModel);
                 }
 
                 string uploadsFolder = string.Empty;
-                if(createEventViewModel.Public)
+                if (createEventViewModel.Public)
                 {
                     uploadsFolder = Path.Combine(host.WebRootPath, "uploads");
                 }
@@ -129,7 +128,7 @@ namespace Presentation.Controllers
                 string uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
                 string filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-                using(FileStream fileStream = new FileStream(filePath, FileMode.Create))
+                using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     file.CopyTo(fileStream);
                 }
@@ -140,7 +139,7 @@ namespace Presentation.Controllers
             ModelState.Remove("FilePath");
             ModelState.Remove("Organiser");
 
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return View(createEventViewModel);
             }
@@ -153,7 +152,7 @@ namespace Presentation.Controllers
             //    return View(newEvent);
             //}
 
-            if(createEventViewModel.Name.Contains("<") || createEventViewModel.Name.Contains(">"))
+            if (createEventViewModel.Name.Contains("<") || createEventViewModel.Name.Contains(">"))
             {
                 ModelState.AddModelError("Name", "Event name cannot contain HTML tags!");
                 return View(createEventViewModel);

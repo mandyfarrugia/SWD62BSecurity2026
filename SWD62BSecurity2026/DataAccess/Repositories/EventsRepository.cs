@@ -1,5 +1,4 @@
-﻿using Castle.Core.Configuration;
-using DataAccess.Context;
+﻿using DataAccess.Context;
 using Domain.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +14,12 @@ namespace DataAccess.Repositories
     public class EventsRepository
     {
         private readonly TicketDbContext _context;
-        private readonly IConfigurationManager _configurationManager;
+        private readonly IConfiguration _configuration;
 
-        public EventsRepository(TicketDbContext context, IConfigurationManager configurationManager)
+        public EventsRepository(TicketDbContext context, IConfiguration configuration)
         {
             this._context = context;
-            this._configurationManager = configurationManager;
+            this._configuration = configuration;
         }
 
         /* This is a method we must ensure can be run by the lesser privileged database login.
@@ -28,7 +27,7 @@ namespace DataAccess.Repositories
          * limit damage especially if this is run by an anonymous user) */
         public IQueryable<Event> GetAllEvents()
         {
-            string? userConnectionString = this._configurationManager.GetConnectionString("UserConnection");
+            string? userConnectionString = this._configuration.GetConnectionString("UserConnection");
             this._context.Database.SetConnectionString(userConnectionString);
 
             /* Querying or any command which is run on the database henceforth will be running with the least privileged login credentials
