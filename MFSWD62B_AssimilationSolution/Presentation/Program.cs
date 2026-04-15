@@ -1,6 +1,6 @@
+using DataAccess.Context;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Presentation.Data;
 
 namespace Presentation
 {
@@ -8,19 +8,29 @@ namespace Presentation
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            builder.Services.AddDbContext<TicketBookingSystemDbContext>(options =>
                 options.UseSqlServer(connectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<ApplicationDbContext>();
+                .AddEntityFrameworkStores<TicketBookingSystemDbContext>()
+                .AddDefaultTokenProviders()
+                .AddDefaultUI();
+
+            builder.Services.AddAuthentication()
+                .AddGoogle(option =>
+                {
+                    option.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? throw new InvalidOperationException("Google Client ID not found in configuration!");
+                    option.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? throw new InvalidOperationException("Google ClientSecret not found in configuration!");
+                });
+
             builder.Services.AddControllersWithViews();
 
-            var app = builder.Build();
+            WebApplication? app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -39,7 +49,8 @@ namespace Presentation
 
             app.UseRouting();
 
-            app.UseAuthorization();
+            app.UseAuthentication(); //Vital for Identity (external authentication, login, and logout).
+            app.UseAuthorization(); //Vital for role management and access control.
 
             app.MapControllerRoute(
                 name: "default",
