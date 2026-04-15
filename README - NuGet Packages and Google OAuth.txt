@@ -20,8 +20,8 @@ It is vital to note that even-numbered editions of .NET Core offer long-term sup
 How to store Google OAuth Client ID and Client Secrets?
 =======================================================
 1. dotnet user-secrets init --project ./<name-of-web-application> (for example: ./Presentation)
-2. dotnet user-secrets set "Authentication:Google:ClientId" "316982294478-5qem9ngrt4mtt6ptslt7nb42gedpdqqo.apps.googleusercontent.com" --project ./<name-of-web-application>
-3. dotnet user-secrets set "Authentication:Google:ClientSecret" "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" --project ./<name-of-web-application>
+2. dotnet user-secrets set "Authentication:Google:ClientId" "<client-id>" --project ./<name-of-web-application>
+3. dotnet user-secrets set "Authentication:Google:ClientSecret" "<client-secret>" --project ./<name-of-web-application>
 
 How to issue migrations?
 ========================
