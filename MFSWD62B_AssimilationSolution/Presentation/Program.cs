@@ -16,7 +16,17 @@ namespace Presentation
                 options.UseSqlServer(connectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+                {
+                    options.SignIn.RequireConfirmedAccount = true;
+                    options.Lockout.MaxFailedAccessAttempts = 3;
+                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
+                    options.Password.RequireNonAlphanumeric = true;
+                    options.Password.RequireUppercase = true;
+                    options.Password.RequiredUniqueChars = 5;
+                    options.Password.RequiredLength = 8;
+                    options.User.RequireUniqueEmail = true;
+                })
                 .AddEntityFrameworkStores<TicketBookingSystemDbContext>()
                 .AddDefaultTokenProviders()
                 .AddDefaultUI();
