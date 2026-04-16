@@ -1,4 +1,5 @@
 ﻿using DataAccess.Context;
+using Domain.CustomExceptions;
 using Domain.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,11 @@ namespace DataAccess.Repositories
 
         public void CreateEvent(Event newEvent)
         {
+            if(this.GetAllEvents().Any(@event => @event.Name.Equals(newEvent.Name)))
+            {
+                throw new DuplicateEventEntryException("Event name already exists!");
+            }
+
             this._context.Events.Add(newEvent);
             this._context.SaveChanges();
         }

@@ -1,4 +1,5 @@
 ﻿using DataAccess.Repositories;
+using Domain.CustomExceptions;
 using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -44,133 +45,148 @@ namespace Presentation.Controllers
         [ValidateAntiForgeryToken] //Generate a server-side nonce token and validate it with the token that has to be generated on the client-side as well.
         public IActionResult Create(CreateEventViewModel createEventViewModel, IFormFile file, [FromServices] IWebHostEnvironment host)
         {
-            if (file != null)
+            try
             {
-                if (file.Length > 5 * 1024 * 1024)
+                if (file != null)
                 {
-                    ModelState.AddModelError("File", "File cannot exceed 5MB!");
-                    return View(createEventViewModel);
-                }
-
-                string[] whiteListOfFileExtensions = new string[] { ".jpg", ".jpeg", ".png" };
-                bool failedCheck = false;
-                int counter = 0;
-
-                do
-                {
-                    if (Path.GetExtension(file.FileName).ToLower() == whiteListOfFileExtensions[counter])
+                    if (file.Length > 5 * 1024 * 1024)
                     {
-                        failedCheck = false;
-                        break;
+                        ModelState.AddModelError("File", "File cannot exceed 5MB!");
+                        return View(createEventViewModel);
+                    }
+
+                    string[] whiteListOfFileExtensions = new string[] { ".jpg", ".jpeg", ".png" };
+                    bool failedCheck = false;
+                    int counter = 0;
+
+                    do
+                    {
+                        if (Path.GetExtension(file.FileName).ToLower() == whiteListOfFileExtensions[counter])
+                        {
+                            failedCheck = false;
+                            break;
+                        }
+                        else
+                        {
+                            failedCheck = true;
+                        }
+
+                        counter++;
+                    }
+                    while (failedCheck && counter < whiteListOfFileExtensions.Length);
+
+                    if (failedCheck)
+                    {
+                        ModelState.AddModelError("File", "Only .jpg, .jpeg, and .png files are allowed!");
+                        return View(createEventViewModel);
+                    }
+
+                    byte[] jpgFileSignature = new byte[] { 255, 216 };
+                    byte[] pngFileSignature = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 };
+
+                    bool jpgSignatureMatch = true;
+                    bool pngSignatureMatch = true;
+
+                    using (Stream fileStream = file.OpenReadStream())
+                    {
+                        byte[] fileSignature = new byte[jpgFileSignature.Length];
+                        fileStream.Read(fileSignature, 0, fileSignature.Length);
+
+                        if (!fileSignature.SequenceEqual(jpgFileSignature))
+                        {
+                            jpgSignatureMatch = false;
+                            ModelState.AddModelError("File", "The file content does match the expected file signature.");
+                            return View(createEventViewModel);
+                        }
+
+                        fileStream.Position = 0;
+
+                        byte[] fileSignature2 = new byte[pngFileSignature.Length];
+                        fileStream.Read(fileSignature2, 0, fileSignature2.Length);
+
+                        if (!fileSignature2.SequenceEqual(pngFileSignature))
+                        {
+                            pngSignatureMatch = false;
+                            ModelState.AddModelError("File", "The file content does match the expected file signature.");
+                            return View(createEventViewModel);
+                        }
+                    }
+
+                    if (!jpgSignatureMatch && !pngSignatureMatch)
+                    {
+                        ModelState.AddModelError("File", "The file content does match the expected file format from JPG and PNG.");
+                        return View(createEventViewModel);
+                    }
+
+                    string uploadsFolder = string.Empty;
+                    if (createEventViewModel.Public)
+                    {
+                        uploadsFolder = Path.Combine(host.WebRootPath, "uploads");
                     }
                     else
                     {
-                        failedCheck = true;
+                        uploadsFolder = Path.Combine(host.ContentRootPath, "uploads");
                     }
 
-                    counter++;
-                }
-                while (failedCheck && counter < whiteListOfFileExtensions.Length);
+                    Directory.CreateDirectory(uploadsFolder);
+                    string uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
+                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-                if (failedCheck)
+                    using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        file.CopyTo(fileStream);
+                    }
+
+                    createEventViewModel.FilePath = "/uploads/" + uniqueFileName;
+                }
+
+                ModelState.Remove("FilePath");
+                ModelState.Remove("Organiser");
+
+                if (!ModelState.IsValid)
                 {
-                    ModelState.AddModelError("File", "Only .jpg, .jpeg, and .png files are allowed!");
                     return View(createEventViewModel);
                 }
 
-                byte[] jpgFileSignature = new byte[] { 255, 216 };
-                byte[] pngFileSignature = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 };
+                //Regex
+                //string regex = "^[A-Z][a-z]*$"; //User can input a character between a-z and A-Z, but not numbers or special characters.
+                //if (!System.Text.RegularExpressions.Regex.IsMatch(newEvent.Name, regex))
+                //{
+                //    ModelState.AddModelError("Name", "Event name contains invalid characters!");
+                //    return View(newEvent);
+                //}
 
-                bool jpgSignatureMatch = true;
-                bool pngSignatureMatch = true;
-
-                using (Stream fileStream = file.OpenReadStream())
+                if (createEventViewModel.Name.Contains("<") || createEventViewModel.Name.Contains(">"))
                 {
-                    byte[] fileSignature = new byte[jpgFileSignature.Length];
-                    fileStream.Read(fileSignature, 0, fileSignature.Length);
-
-                    if (!fileSignature.SequenceEqual(jpgFileSignature))
-                    {
-                        jpgSignatureMatch = false;
-                        //ModelState.AddModelError("File", "The file content does match the expected file signature.");
-                        //return View(createEventViewModel);
-                    }
-
-                    fileStream.Position = 0;
-
-                    byte[] fileSignature2 = new byte[pngFileSignature.Length];
-                    fileStream.Read(fileSignature2, 0, fileSignature2.Length);
-
-                    if (!fileSignature2.SequenceEqual(pngFileSignature))
-                    {
-                        pngSignatureMatch = false;
-                        //ModelState.AddModelError("File", "The file content does match the expected file signature.");
-                        //return View(createEventViewModel);
-                    }
-                }
-
-                if (!jpgSignatureMatch && !pngSignatureMatch)
-                {
-                    ModelState.AddModelError("File", "The file content does match the expected file format from JPG and PNG.");
+                    ModelState.AddModelError("Name", "Event name cannot contain HTML tags!");
                     return View(createEventViewModel);
                 }
 
-                string uploadsFolder = string.Empty;
-                if (createEventViewModel.Public)
+                Event newEvent = new Event()
                 {
-                    uploadsFolder = Path.Combine(host.WebRootPath, "uploads");
-                }
-                else
-                {
-                    uploadsFolder = Path.Combine(host.ContentRootPath, "uploads");
-                }
+                    Name = createEventViewModel.Name,
+                    Price = createEventViewModel.Price,
+                    Public = createEventViewModel.Public,
+                    MaximumTickets = createEventViewModel.MaximumTickets,
+                    FilePath = createEventViewModel.FilePath,
+                    Organiser = User.Identity.Name
+                };
 
-                Directory.CreateDirectory(uploadsFolder);
-                string uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
-                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    file.CopyTo(fileStream);
-                }
-
-                createEventViewModel.FilePath = "/uploads/" + uniqueFileName;
+                this._eventsRepository.CreateEvent(newEvent);
+                TempData["success"] = "Event created successfully!";
             }
-
-            ModelState.Remove("FilePath");
-            ModelState.Remove("Organiser");
-
-            if (!ModelState.IsValid)
+            catch(DuplicateEventEntryException deee)
             {
+                ModelState.AddModelError("", deee.Message);
                 return View(createEventViewModel);
             }
-
-            //Regex
-            //string regex = "^[A-Z][a-z]*$"; //User can input a character between a-z and A-Z, but not numbers or special characters.
-            //if (!System.Text.RegularExpressions.Regex.IsMatch(newEvent.Name, regex))
-            //{
-            //    ModelState.AddModelError("Name", "Event name contains invalid characters!");
-            //    return View(newEvent);
-            //}
-
-            if (createEventViewModel.Name.Contains("<") || createEventViewModel.Name.Contains(">"))
+            catch
             {
-                ModelState.AddModelError("Name", "Event name cannot contain HTML tags!");
+                //Log the exception details.
+                ModelState.AddModelError("", "An error occurred while creating the event. Please try again.");
                 return View(createEventViewModel);
             }
-
-            Event newEvent = new Event()
-            {
-                Name = createEventViewModel.Name,
-                Price = createEventViewModel.Price,
-                Public = createEventViewModel.Public,
-                MaximumTickets = createEventViewModel.MaximumTickets,
-                FilePath = createEventViewModel.FilePath,
-                Organiser = User.Identity.Name
-            };
-
-            this._eventsRepository.CreateEvent(newEvent);
-            TempData["success"] = "Event created successfully!";
+            
             return RedirectToAction(nameof(Index));
         }
 

@@ -3,6 +3,7 @@ using DataAccess.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Presentation.Helpers;
+using Serilog;
 
 namespace Presentation
 {
@@ -45,6 +46,23 @@ namespace Presentation
                 options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
             }); //Do not chain AddCookie() to AddAuthentication() when using external authentication as it may interfere with the default cookie authentication scheme used by Identity.
 
+            /* Never log to a database or the console, instead log to a file or the cloud. 
+             * Reasons not to log into a database:
+             * - 1. Performance (logging to a database can be slower than logging to a file)
+             * - 2. Complexity (if the database fails/is unavailable/runs out of space, logs will start failing with every line especially if we are using logs as part of error handling)
+             * - 3. Costs (database space costs more than storage for logs space) */
+            var logConfiguration = new LoggerConfiguration()
+                .MinimumLevel.Warning() //Ignore any levels below Warning which is a Level 3 category (Warning + Error + Critical). Good way to downsize the amount of log entries in a log file.
+                .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+
+            //builder.Host.UseSerilog(logConfiguration);
+
+            builder.Host.ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.AddSerilog(logConfiguration, dispose: true);
+            });
 
             builder.Services.AddScoped<EventsRepository>(
                 serviceProvider => new EventsRepository(
@@ -85,6 +103,11 @@ namespace Presentation
                  * This reduces any duplicate entries or any possible exceptions. */
                 rolesManagementHelper.DefaultRolesSetup();
             }
+
+            /* This will catch any unhandled exceptions and the user is redirected to the error page with the error details. 
+             * ReExecute - server transfer (user is redirected on the server, the user will not notice any changes on the URL)
+             * Redirect - client transfer (use this one in case you want to log on which page the exception happened) */
+            app.UseStatusCodePagesWithReExecute("/Home/StatusError", "?=code{0}"); //Attach query string parameter to action which returns the status code generated.
 
             //Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

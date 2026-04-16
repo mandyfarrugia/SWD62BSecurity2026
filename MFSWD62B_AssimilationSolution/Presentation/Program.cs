@@ -19,13 +19,13 @@ namespace Presentation
             builder.Services.AddDefaultIdentity<IdentityUser>(options =>
                 {
                     options.SignIn.RequireConfirmedAccount = true;
-                    options.Lockout.MaxFailedAccessAttempts = 3;
-                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
-                    options.Password.RequireNonAlphanumeric = true;
-                    options.Password.RequireUppercase = true;
-                    options.Password.RequiredUniqueChars = 5;
-                    options.Password.RequiredLength = 8;
-                    options.User.RequireUniqueEmail = true;
+                    options.Lockout.MaxFailedAccessAttempts = 3; //Lock the account after 3 consecutive failed login attempts to prevent brute-force attacks.
+                    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30); //Lock the account for half an hour following 3 consecutive failed attempts.
+                    options.Password.RequireNonAlphanumeric = true; //Non-alphanumeric characters are symbols and punctuation marks that are not letters (A-Z/a-z) or digits (0-9).
+                    options.Password.RequireUppercase = true; //The password requires at least one uppercase letter (A-Z).
+                    options.Password.RequiredUniqueChars = 5; //The password must contain at least 5 unique characters which helps to ensure that the password is not easily guessable and encourages users to create more complex passwords.
+                    options.Password.RequiredLength = 8; //The password must be at least 8 characters long which is a common minimum length requirement to enhance security by making passwords harder to guess or brute-force.
+                    options.User.RequireUniqueEmail = true; //This setting ensures that each user must have a unique email address, preventing multiple accounts from being registered with the same email and enhancing account security and management.
                 })
                 .AddEntityFrameworkStores<TicketBookingSystemDbContext>()
                 .AddDefaultTokenProviders()
