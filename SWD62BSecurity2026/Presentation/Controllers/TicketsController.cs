@@ -1,4 +1,5 @@
-﻿using Domain.Models;
+﻿using DataAccess.Repositories;
+using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 using Presentation.Models.ViewModels;
 
@@ -20,7 +21,7 @@ namespace Presentation.Controllers
         }
 
         [HttpPost]
-        public IActionResult Buy(CreateTicketViewModel createTicketViewModel)
+        public IActionResult Buy(CreateTicketViewModel createTicketViewModel, [FromServices] EventsRepository eventsRepository)
         {
             if(!ModelState.IsValid)
                 return View(createTicketViewModel);
@@ -36,6 +37,8 @@ namespace Presentation.Controllers
             };
 
             //Save the ticket to the database.
+            eventsRepository.Checkout(new List<Ticket>() { ticket }, createTicketViewModel.EventFK);
+            
             return View(createTicketViewModel);
         }
     }

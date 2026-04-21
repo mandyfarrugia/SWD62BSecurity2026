@@ -19,15 +19,19 @@ namespace Presentation.Controllers
 
         public IActionResult Index()
         {
-            List<EventListViewModel> eventListViewModel = this._eventsRepository.GetAllEvents().Where(e => e.Public).Select(e => new EventListViewModel()
-            {
-                Id = e.Id,
-                Name = e.Name,
-                Price = e.Price,
-                Public = e.Public,
-                MaximumTickets = e.MaximumTickets,
-                FilePath = e.FilePath,
-            }).ToList();
+            List<EventListViewModel> eventListViewModel = this._eventsRepository
+                .GetAllEvents()
+                .Where(@event => @event.Public)
+                .Select(@event => new EventListViewModel()
+                    {
+                        Id = @event.Id,
+                        Name = @event.Name,
+                        Price = @event.Price,
+                        Public = @event.Public,
+                        MaximumTickets = @event.MaximumTickets,
+                        FilePath = @event.FilePath,
+                    })
+                .ToList();
 
             return View(eventListViewModel);
         }
@@ -56,77 +60,36 @@ namespace Presentation.Controllers
                     }
 
                     string[] whiteListOfFileExtensions = new string[] { ".jpg", ".jpeg", ".png" };
-                    bool failedCheck = false;
-                    int counter = 0;
+                    string extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
-                    do
-                    {
-                        if (Path.GetExtension(file.FileName).ToLower() == whiteListOfFileExtensions[counter])
-                        {
-                            failedCheck = false;
-                            break;
-                        }
-                        else
-                        {
-                            failedCheck = true;
-                        }
-
-                        counter++;
-                    }
-                    while (failedCheck && counter < whiteListOfFileExtensions.Length);
-
-                    if (failedCheck)
+                    if (!whiteListOfFileExtensions.Contains(extension))
                     {
                         ModelState.AddModelError("File", "Only .jpg, .jpeg, and .png files are allowed!");
                         return View(createEventViewModel);
                     }
 
-                    byte[] jpgFileSignature = new byte[] { 255, 216 };
-                    byte[] pngFileSignature = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 };
+                    ReadOnlySpan<byte> jpgFileSignature = stackalloc byte[] { 255, 216 };
+                    ReadOnlySpan<byte> pngFileSignature = stackalloc byte[] { 137, 80, 78, 71, 13, 10, 26, 10 };
 
-                    bool jpgSignatureMatch = true;
-                    bool pngSignatureMatch = true;
+                    bool jpgSignatureMatch;
+                    bool pngSignatureMatch;
 
                     using (Stream fileStream = file.OpenReadStream())
                     {
-                        byte[] fileSignature = new byte[jpgFileSignature.Length];
-                        fileStream.Read(fileSignature, 0, fileSignature.Length);
+                        Span<byte> fileSignature = new byte[8];
+                        int bytesRead = fileStream.Read(fileSignature);
 
-                        if (!fileSignature.SequenceEqual(jpgFileSignature))
+                        jpgSignatureMatch = bytesRead >= jpgFileSignature.Length && fileSignature[..jpgFileSignature.Length].SequenceEqual(jpgFileSignature);
+                        pngSignatureMatch = bytesRead >= pngFileSignature.Length && fileSignature[..pngFileSignature.Length].SequenceEqual(pngFileSignature);
+
+                        if (!jpgSignatureMatch && !pngSignatureMatch)
                         {
-                            jpgSignatureMatch = false;
-                            ModelState.AddModelError("File", "The file content does match the expected file signature.");
-                            return View(createEventViewModel);
-                        }
-
-                        fileStream.Position = 0;
-
-                        byte[] fileSignature2 = new byte[pngFileSignature.Length];
-                        fileStream.Read(fileSignature2, 0, fileSignature2.Length);
-
-                        if (!fileSignature2.SequenceEqual(pngFileSignature))
-                        {
-                            pngSignatureMatch = false;
-                            ModelState.AddModelError("File", "The file content does match the expected file signature.");
+                            ModelState.AddModelError("File", "The file content does not match the expected file format from JPG and PNG.");
                             return View(createEventViewModel);
                         }
                     }
 
-                    if (!jpgSignatureMatch && !pngSignatureMatch)
-                    {
-                        ModelState.AddModelError("File", "The file content does match the expected file format from JPG and PNG.");
-                        return View(createEventViewModel);
-                    }
-
-                    string uploadsFolder = string.Empty;
-                    if (createEventViewModel.Public)
-                    {
-                        uploadsFolder = Path.Combine(host.WebRootPath, "uploads");
-                    }
-                    else
-                    {
-                        uploadsFolder = Path.Combine(host.ContentRootPath, "uploads");
-                    }
+                    string uploadsFolder = createEventViewModel.Public ? Path.Combine(host.WebRootPath, "uploads") : Path.Combine(host.ContentRootPath, "uploads");
 
                     Directory.CreateDirectory(uploadsFolder);
                     string uniqueFileName = $"{Guid.NewGuid()}_{file.FileName}";
@@ -137,7 +100,7 @@ namespace Presentation.Controllers
                         file.CopyTo(fileStream);
                     }
 
-                    createEventViewModel.FilePath = "/uploads/" + uniqueFileName;
+                    createEventViewModel.FilePath = $"/uploads/{uniqueFileName}";
                 }
 
                 ModelState.Remove("FilePath");
@@ -149,13 +112,14 @@ namespace Presentation.Controllers
                 }
 
                 //Regex
-                //string regex = "^[A-Z][a-z]*$"; //User can input a character between a-z and A-Z, but not numbers or special characters.
-                //if (!System.Text.RegularExpressions.Regex.IsMatch(newEvent.Name, regex))
-                //{
-                //    ModelState.AddModelError("Name", "Event name contains invalid characters!");
-                //    return View(newEvent);
-                //}
+                string regex = "^[A-Z][a-z]*( [A-Z][a-z]*)*$"; //User can input zero or more characters between a-z and A-Z including a space (each word must be capitalised), but not numbers or special characters.
+                if (!System.Text.RegularExpressions.Regex.IsMatch(createEventViewModel.Name, regex))
+                {
+                    ModelState.AddModelError("Name", "Event name contains invalid characters!");
+                    return View(createEventViewModel);
+                }
 
+                //To mitigate Cross-Site Scripting, forbid any input containing tags to prevent any injection of JavaScript code.
                 if (createEventViewModel.Name.Contains("<") || createEventViewModel.Name.Contains(">"))
                 {
                     ModelState.AddModelError("Name", "Event name cannot contain HTML tags!");
@@ -190,7 +154,7 @@ namespace Presentation.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        /* An action filter is required in case you need to verify whether the user who is an organiser is actually the organiser of the event to be deleted, then you have to use and apply an authorisation filter. **/
+        //An action filter is required in case you need to verify whether the user who is an organiser is actually the organiser of the event to be deleted, then you have to use and apply an authorisation filter.
         [HasEventOrganiserPermission]
         [Authorize(Roles = "organiser")] //Distinguish between an authenticated user and an anonymous user.
         public IActionResult Delete(int id)

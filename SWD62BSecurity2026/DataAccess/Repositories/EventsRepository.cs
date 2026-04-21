@@ -1,67 +1,83 @@
 ﻿using DataAccess.Context;
 using Domain.CustomExceptions;
 using Domain.Models;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace DataAccess.Repositories
 {
     public class EventsRepository
     {
-        private readonly TicketDbContext _context;
-        private readonly IConfiguration _configuration;
+        private readonly IDbContextFactory<DefaultUserTicketDbContext> _defaultContextFactory;
+        private readonly IDbContextFactory<LeastPrivilegedUserTicketDbContext> _leastPrivilegedUserContextFactory;
 
-        public EventsRepository(TicketDbContext context, IConfiguration configuration)
+        public EventsRepository(
+            IDbContextFactory<DefaultUserTicketDbContext> defaultContextFactory,
+            IDbContextFactory<LeastPrivilegedUserTicketDbContext> leastPrivilegedUserContextFactory)
         {
-            this._context = context;
-            this._configuration = configuration;
+            _defaultContextFactory = defaultContextFactory;
+            _leastPrivilegedUserContextFactory = leastPrivilegedUserContextFactory;
         }
 
         /* This is a method we must ensure can be run by the lesser privileged database login.
          * This ensures that if an SQL Injection attack is successfully, the damage is limited as the attacker will be using a lesser privileged login where DELETE or CREATE are restricted.
          * limit damage especially if this is run by an anonymous user) */
-        public IQueryable<Event> GetAllEvents()
+        public List<Event> GetAllEvents()
         {
-            string? userConnectionString = this._configuration.GetConnectionString("UserConnection");
-
-            if (!string.IsNullOrWhiteSpace(userConnectionString))
-                this._context.Database.SetConnectionString(userConnectionString);
-
+            using LeastPrivilegedUserTicketDbContext? leastPrivilegedUser = this._leastPrivilegedUserContextFactory.CreateDbContext();
             /* Querying or any command which is run on the database henceforth will be running with the least privileged login credentials
              * which is a good security practice to limit the damage of an SQL Injection attack. */
-            return this._context.Events;
+            return leastPrivilegedUser.Events.AsNoTracking().ToList();
         }
 
         public void CreateEvent(Event newEvent)
         {
-            if(this.GetAllEvents().Any(@event => @event.Name.Equals(newEvent.Name)))
+            using LeastPrivilegedUserTicketDbContext? leastPrivilegedUser = this._leastPrivilegedUserContextFactory.CreateDbContext();
+            if (leastPrivilegedUser.Events.Any(@event => @event.Name.Equals(newEvent.Name)))
             {
                 throw new DuplicateEventEntryException("Event name already exists!");
             }
 
-            this._context.Events.Add(newEvent);
-            this._context.SaveChanges();
+            using DefaultUserTicketDbContext? defaultContext = this._defaultContextFactory.CreateDbContext();
+            defaultContext.Events.Add(newEvent);
+            defaultContext.SaveChanges();
         }
 
         public void DeleteEvent(int id)
         {
-            string? userConnectionString = this._configuration.GetConnectionString("DefaultConnection");
-
-            if(!string.IsNullOrWhiteSpace(userConnectionString))
-                this._context.Database.SetConnectionString(userConnectionString);
-
-            Event? eventToDelete = this._context.Events.Find(id);
+            using DefaultUserTicketDbContext? defaultContext = this._defaultContextFactory.CreateDbContext();
+            Event? eventToDelete = defaultContext.Events.FirstOrDefault(@event => @event.Id == id);
 
             if(eventToDelete != null)
             {
-                this._context.Events.Remove(eventToDelete);
-                this._context.SaveChanges();
+                defaultContext.Events.Remove(eventToDelete);
+                defaultContext.SaveChanges();
+            }
+        }
+
+        public void Checkout(List<Ticket> tickets, int eventId)
+        {
+            using DefaultUserTicketDbContext? defaultContext = this._defaultContextFactory.CreateDbContext();
+            IDbContextTransaction? transaction = defaultContext.Database.BeginTransaction();
+
+            try
+            {
+                Event? @event = defaultContext.Events.FirstOrDefault(e => e.Id == eventId);
+                if (@event.MaximumTickets >= tickets.Sum(ticket => ticket.Quantity))
+                {
+                    foreach (Ticket ticket in tickets)
+                    {
+                        defaultContext.Tickets.Add(ticket);
+                    }
+                }
+
+                defaultContext.SaveChanges();
+                transaction.Commit(); //Confirms intention to permanently store the tickets in the database.
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
             }
         }
     }

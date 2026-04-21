@@ -7,7 +7,7 @@
 <h2>Events</h2>
 
 <p>
-    <a asp-action="Create">Create New Event</a>
+    <a asp-action="Create" class="btn btn-success">Add new event</a>
 </p>
 
 <table class="table">
@@ -16,8 +16,9 @@
             <th>@Html.DisplayNameFor(model => model.Name)</th>
             <th>@Html.DisplayNameFor(model => model.Price)</th>
             <th>@Html.DisplayNameFor(model => model.Public)</th>
+            <th>@Html.DisplayNameFor(model => model.FilePath)</th>
             <th>@Html.DisplayNameFor(model => model.MaximumTickets)</th>
-            <th></th>
+            <th>Actions</th>
             <th></th>
         </tr>
     </thead>
@@ -39,12 +40,12 @@
                     }
                 <td>@Html.DisplayFor(modelItem => item.MaximumTickets)</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary">Edit</a>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-primary">Details</a>
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Delete</a>
                 </td>
                 <td>
-                    <a href="/Tickets/Buy/@item.Id" class="btn btn-warning">Buy</a>
+                    <a href="/Tickets/Buy/@item.Id" class="btn btn-success">Buy</a>
                 </td>
             </tr>
         }

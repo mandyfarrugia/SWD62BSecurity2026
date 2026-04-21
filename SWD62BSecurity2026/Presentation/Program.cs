@@ -15,8 +15,13 @@ namespace Presentation
 
             //Add services to the container.
             string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<TicketDbContext>(options =>
-                options.UseSqlServer(connectionString));
+            builder.Services.AddDbContext<TicketDbContext>(options => options.UseSqlServer(connectionString));
+
+            builder.Services.AddDbContextFactory<DefaultUserTicketDbContext>(options => options.UseSqlServer(connectionString));
+
+            builder.Services.AddDbContextFactory<LeastPrivilegedUserTicketDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("UserConnection")));
+
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
@@ -56,19 +61,15 @@ namespace Presentation
                 .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
-            //builder.Host.UseSerilog(logConfiguration);
+            builder.Host.UseSerilog(logConfiguration);
 
-            builder.Host.ConfigureLogging(logging =>
-            {
-                logging.ClearProviders();
-                logging.AddSerilog(logConfiguration, dispose: true);
-            });
+            //builder.Host.ConfigureLogging(logging =>
+            //{
+            //    logging.ClearProviders();
+            //    logging.AddSerilog(logConfiguration, dispose: true);
+            //});
 
-            builder.Services.AddScoped<EventsRepository>(
-                serviceProvider => new EventsRepository(
-                    serviceProvider.GetRequiredService<TicketDbContext>(), 
-                    serviceProvider.GetRequiredService<IConfiguration>()
-            ));
+            builder.Services.AddScoped<EventsRepository>();
 
             WebApplication? app = builder.Build();
 
@@ -107,7 +108,7 @@ namespace Presentation
             /* This will catch any unhandled exceptions and the user is redirected to the error page with the error details. 
              * ReExecute - server transfer (user is redirected on the server, the user will not notice any changes on the URL)
              * Redirect - client transfer (use this one in case you want to log on which page the exception happened) */
-            app.UseStatusCodePagesWithReExecute("/Home/StatusError", "?=code{0}"); //Attach query string parameter to action which returns the status code generated.
+            app.UseStatusCodePagesWithReExecute("/Home/StatusError", "?code={0}"); //Attach query string parameter to action which returns the status code generated.
 
             //Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
