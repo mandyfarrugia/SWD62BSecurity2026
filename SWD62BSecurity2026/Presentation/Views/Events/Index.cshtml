@@ -7,47 +7,69 @@
 <h2>Events</h2>
 
 <p>
-    <a asp-action="Create" class="btn btn-success">Add new event</a>
+    <a asp-action="Create" class="btn btn-success"><i class="fa-solid fa-plus"></i> Add new event</a>
 </p>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>@Html.DisplayNameFor(model => model.Name)</th>
-            <th>@Html.DisplayNameFor(model => model.Price)</th>
-            <th>@Html.DisplayNameFor(model => model.Public)</th>
-            <th>@Html.DisplayNameFor(model => model.FilePath)</th>
-            <th>@Html.DisplayNameFor(model => model.MaximumTickets)</th>
-            <th>Actions</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
+<p class="mb-3">
+    <form action="/Events/Search" method="post">
+        <div class="row">
+            <div class="col-sm">
+                <input class="form-control" name="searchTerm" value="@(ViewBag.SearchTerm ?? string.Empty)" type="text" placeholder="Enter search term" />
+            </div>
+            <div class="col-sm">
+                <input class="btn btn-primary" type="submit" name="submit" value="Submit" />
+            </div>
+        </div>
+    </form>
+</p>
+
+@if (!Model.Any())
+{
+    <p>Sorry, nothing came up!</p>
+}
+else
+{
+    <table class="table">
+        <thead>
             <tr>
-                <td>@Html.DisplayFor(modelItem => item.Name)</td>
-                <td>@Html.DisplayFor(modelItem => item.Price)</td>
-                <td>@Html.DisplayFor(modelItem => item.Public)</td>
-                <td>
-                    @if (!string.IsNullOrEmpty(item.FilePath))
-                    {
-                        <img src="@item.FilePath" alt="Event Image" style="max-width: 100px; max-height: 100px;"/>
-                    }
-                    else
-                    {
-                        <span>No file</span>
-                    }
-                <td>@Html.DisplayFor(modelItem => item.MaximumTickets)</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary">Edit</a>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-primary">Details</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Delete</a>
-                </td>
-                <td>
-                    <a href="/Tickets/Buy/@item.Id" class="btn btn-success">Buy</a>
-                </td>
+                <th>@Html.DisplayNameFor(model => model.Name)</th>
+                <th>@Html.DisplayNameFor(model => model.Price)</th>
+                <th>@Html.DisplayNameFor(model => model.Public)</th>
+                <th>@Html.DisplayNameFor(model => model.FilePath)</th>
+                <th>@Html.DisplayNameFor(model => model.MaximumTickets)</th>
+                <th>Actions</th>
+                <th></th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Price)</td>
+                    <td>@Html.DisplayFor(modelItem => item.Public)</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.FilePath))
+                        {
+                            <img src="@item.FilePath" alt="Event Image" style="max-width: 200px; max-height: 200px;" />
+                        }
+                        else
+                        {
+                            <span>No file</span>
+                        }
+                        <td>@Html.DisplayFor(modelItem => item.MaximumTickets)</td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-primary"><i class="fa-solid fa-eye"></i> Details</a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Delete</a>
+                        </td>
+                        <td>
+                            <a href="/Tickets/Buy/@item.Id" class="btn btn-success"><i class="fa-solid fa-cart-arrow-down"></i> Buy</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+

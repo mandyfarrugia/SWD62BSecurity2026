@@ -51,6 +51,14 @@ namespace Presentation.Controllers
         {
             try
             {
+                ModelState.Remove("FilePath");
+                ModelState.Remove("Organiser");
+
+                if (!ModelState.IsValid)
+                {
+                    return View(createEventViewModel);
+                }
+
                 if (file != null)
                 {
                     if (file.Length > 5 * 1024 * 1024)
@@ -103,16 +111,8 @@ namespace Presentation.Controllers
                     createEventViewModel.FilePath = $"/uploads/{uniqueFileName}";
                 }
 
-                ModelState.Remove("FilePath");
-                ModelState.Remove("Organiser");
-
-                if (!ModelState.IsValid)
-                {
-                    return View(createEventViewModel);
-                }
-
                 //Regex
-                string regex = "^[A-Z][a-z]*( [A-Z][a-z]*)*$"; //User can input zero or more characters between a-z and A-Z including a space (each word must be capitalised), but not numbers or special characters.
+                string regex = "^[A-Za-z0-9\\s]+$"; //User can input zero or more characters between a-z and A-Z including a space (each word must be capitalised), but not numbers or special characters.
                 if (!System.Text.RegularExpressions.Regex.IsMatch(createEventViewModel.Name, regex))
                 {
                     ModelState.AddModelError("Name", "Event name contains invalid characters!");
@@ -141,7 +141,7 @@ namespace Presentation.Controllers
             }
             catch(DuplicateEventEntryException deee)
             {
-                ModelState.AddModelError("", deee.Message);
+                ModelState.AddModelError("Name", deee.Message);
                 return View(createEventViewModel);
             }
             catch
@@ -162,6 +162,27 @@ namespace Presentation.Controllers
             this._eventsRepository.DeleteEvent(id);
             TempData["success"] = "Event deleted successfully";
             return RedirectToAction(nameof(Index));
+        }
+
+        public IActionResult Search(string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+                return RedirectToAction(nameof(Index));
+
+            List<EventListViewModel> eventListViewModels = this._eventsRepository
+                .GetEventsByName(searchTerm)
+                .Select(@event => new EventListViewModel()
+                    {
+                        Id = @event.Id,
+                        Name = @event.Name,
+                        Price = @event.Price,
+                        Public = @event.Public,
+                        FilePath = @event.FilePath,
+                        MaximumTickets = @event.MaximumTickets
+                }).ToList();
+
+            ViewBag.SearchTerm = searchTerm;
+            return View(nameof(Index), eventListViewModels);
         }
     }
 }

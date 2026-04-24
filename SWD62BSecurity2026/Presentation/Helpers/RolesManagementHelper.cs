@@ -4,8 +4,8 @@ namespace Presentation.Helpers
 {
     public class RolesManagementHelper
     {
-        private RoleManager<IdentityRole> _roleManager;
-        private UserManager<IdentityUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly UserManager<IdentityUser> _userManager;
 
         public RolesManagementHelper(
             RoleManager<IdentityRole> roleManager,

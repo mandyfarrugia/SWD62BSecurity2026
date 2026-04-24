@@ -10,6 +10,7 @@ namespace Presentation.Models.ViewModels
         public bool Public { get; set; }
         [DisplayName("Maximum Tickets")]
         public int MaximumTickets { get; set; }
+        [DisplayName("Image")]
         public string FilePath { get; set; }
     }
 }

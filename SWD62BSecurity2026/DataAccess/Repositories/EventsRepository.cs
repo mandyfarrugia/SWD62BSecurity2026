@@ -55,6 +55,13 @@ namespace DataAccess.Repositories
             }
         }
 
+        public List<Event> GetEventsByName(string name)
+        {
+            using LeastPrivilegedUserTicketDbContext leastPrivilegedUserTicketDbContext = this._leastPrivilegedUserContextFactory.CreateDbContext();
+            List<Event> events = leastPrivilegedUserTicketDbContext.Events.AsNoTracking().Where(@event => @event.Name.Contains(name)).ToList();
+            return events;
+        }
+
         public void Checkout(List<Ticket> tickets, int eventId)
         {
             using DefaultUserTicketDbContext? defaultContext = this._defaultContextFactory.CreateDbContext();
