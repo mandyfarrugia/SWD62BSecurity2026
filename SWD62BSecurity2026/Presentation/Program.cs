@@ -27,12 +27,13 @@ namespace Presentation
             builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
             {
                 options.SignIn.RequireConfirmedAccount = true; //This may block external authentication (OAuth), use with caution.
-                options.Lockout.MaxFailedAccessAttempts = 3; //The idea is to block the account after the third failed consecutive login attempt.
-                options.Password.RequireNonAlphanumeric = true;
-                options.Password.RequiredUniqueChars = 5; //Must use at least 5 unique characters.
-                options.Password.RequireUppercase = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequireDigit = true;
+                options.Lockout.MaxFailedAccessAttempts = 3; //Lock the account after 3 consecutive failed login attempts to prevent brute-force attacks.
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30); //Lock the account for half an hour following 3 consecutive failed attempts.
+                options.Password.RequireNonAlphanumeric = true; //Non-alphanumeric characters are symbols and punctuation marks that are not letters (A-Z/a-z) or digits (0-9).
+                options.Password.RequireUppercase = true; //The password requires at least one uppercase letter (A-Z).
+                options.Password.RequiredUniqueChars = 5; //The password must contain at least 5 unique characters which helps to ensure that the password is not easily guessable and encourages users to create more complex passwords.
+                options.Password.RequiredLength = 8; //The password must be at least 8 characters long which is a common minimum length requirement to enhance security by making passwords harder to guess or brute-force.
+                options.User.RequireUniqueEmail = true; //This setting ensures that each user must have a unique email address, preventing multiple accounts from being registered with the same email and enhancing account security and management.
             })
                 .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<TicketDbContext>()
@@ -40,6 +41,7 @@ namespace Presentation
                  * you need to add the default token providers, as well as the default user interface otherwise login will fail. */
                 .AddDefaultTokenProviders()
                 .AddDefaultUI(); 
+
 
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages(); //Necessary for scaffolded Identity views to work, as well as for any Razor Pages (Identity and external authentication, for example) in the application.

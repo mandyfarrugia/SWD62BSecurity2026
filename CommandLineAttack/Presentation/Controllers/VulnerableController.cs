@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Presentation.Controllers
 {
@@ -21,7 +22,7 @@ namespace Presentation.Controllers
                 if (whiteList.Contains(s))
                     continue;
                 else
-                    return Content("Invalid injected commands.")
+                    return Content("Invalid injected commands.");
             }
 
             ProcessStartInfo processStartInfo = new ProcessStartInfo()
