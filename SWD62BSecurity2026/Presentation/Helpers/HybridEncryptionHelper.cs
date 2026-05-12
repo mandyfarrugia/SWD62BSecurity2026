@@ -2,13 +2,6 @@
 
 namespace Presentation.Helpers
 {
-    public class HybridParameters
-    {
-        public string EncryptedSymmetricKey { get; set; }
-        public string EncryptedIV { get; set; }
-        public string CipherText { get; set; }
-    }
-
     public class HybridEncryptionHelper
     {
         public static MemoryStream Encrypt(MemoryStream memoryStreamInput, string publicKey)
@@ -25,8 +18,10 @@ namespace Presentation.Helpers
             //Exercise: Create an overload of the SymmetricEncryptionHelper.Encrypt() to accept a memory stream.
 
             //3. Convert the memory stream into a string.
-            string textToEncrypt = System.Text.Encoding.UTF8.GetString(memoryStreamInput.ToArray());
-            string cipherAsText = SymmetricEncryptionHelper.Encrypt(textToEncrypt, symmetricParameters, Aes.Create());
+            //string textToEncrypt = System.Text.Encoding.UTF8.GetString(memoryStreamInput.ToArray());
+            //string cipherAsText = SymmetricEncryptionHelper.Encrypt(textToEncrypt, symmetricParameters, Aes.Create());
+
+            string cipherAsText = SymmetricEncryptionHelper.Encrypt(memoryStreamInput, symmetricParameters, Aes.Create());
 
             //4. Encrypt the symmetric keys using the public key.
             byte[] encryptedSecretKey = AsymmetricEncryptionHelper.Encrypt(symmetricParameters.Key, publicKey);
@@ -45,22 +40,57 @@ namespace Presentation.Helpers
             return memoryStreamOutput;
         }
 
-        public static MemoryStream Decrypt(MemoryStream memoryStreamCipherIn, string privateKey) 
+        public static MemoryStream Decrypt(MemoryStream memoryStreamCipherInput, string privateKey) 
         {
             //Exercise: Implement the decryption logic for the above encryption method.
 
             //1. Create an instance of the RSA algorithm and import the private key.
+            RSA algorithm = RSA.Create(1024);
+            algorithm.FromXmlString(privateKey);
 
             /* 2. Open memoryStreamCipherIn and and first read the:
-             *  - encrypted key (128 bytes, when you are reading, read memoryStreamCipherIn.Read(encrpytedKey, 0, 128))
-             *  - encrypted IV (128 bytes, when you are reading, read memoryStreamCipherIn.Read(encrpytedIV, 0, 128))
+             *  - encrypted key (128 bytes, when you are reading, read memoryStreamCipherInput.Read(encryptedKey, 0, 128))
+             *  - encrypted IV (128 bytes, when you are reading, read memoryStreamCipherInput.Read(encryptedIV, 0, 128))
              *  - encrypted data (read what is left, that would be the cipher text) */
 
+            byte[] encryptedKey = new byte[128];
+            byte[] encryptedIV = new byte[128];
+
+            memoryStreamCipherInput.Read(encryptedKey, 0, encryptedKey.Length);
+            memoryStreamCipherInput.Read(encryptedIV, 0, encryptedIV.Length);
+
+            byte[] remainingCipherBytes = new byte[memoryStreamCipherInput.Length - memoryStreamCipherInput.Position];
+
+            memoryStreamCipherInput.Read(remainingCipherBytes, 0, remainingCipherBytes.Length);
+
             //3. Decrypt the encrypted key and IV using the private key (asymmetric).
+            byte[] decryptedKey = AsymmetricEncryptionHelper.Decrypt(encryptedKey, privateKey);
+            byte[] decryptedIV = AsymmetricEncryptionHelper.Decrypt(encryptedIV, privateKey);
 
             //4. Decrypt the cipher text using the decrypted key and IV (symmetric).
+            using(Aes aes = Aes.Create())
+            {
+                SymmetricParameters symmetricParameters = new SymmetricParameters
+                {
+                    Key = decryptedKey,
+                    IV = decryptedIV
+                };
 
-            //5. Return the decrypted data as a MemoryStream.
+                aes.Key = symmetricParameters.Key;
+                aes.IV = symmetricParameters.IV;
+
+                MemoryStream memoryStreamInput = new MemoryStream(remainingCipherBytes);
+                MemoryStream memoryStreamOutput = new MemoryStream();
+
+                using (CryptoStream cryptoStream = new CryptoStream(memoryStreamInput, aes.CreateDecryptor(), CryptoStreamMode.Read))
+                {
+                    cryptoStream.CopyTo(memoryStreamOutput);
+                }
+
+                //5. Return the decrypted data as a MemoryStream.
+                memoryStreamOutput.Position = 0;
+                return memoryStreamOutput;
+            }
         }
     }
 }

@@ -2,17 +2,11 @@
 
 namespace Presentation.Helpers
 {
-    public class AsymmetricParameters
-    {
-        public string PublicKey { get; set; }
-        public string PrivateKey { get; set; }
-    }
-
     public class AsymmetricEncryptionHelper
     {
         public static AsymmetricParameters GenerateKeys()
         {
-            RSA algorithm = RSA.Create();
+            RSA algorithm = RSA.Create(1024);
 
             return new AsymmetricParameters()
             {

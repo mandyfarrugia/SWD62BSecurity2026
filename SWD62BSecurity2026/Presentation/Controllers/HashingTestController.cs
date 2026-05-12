@@ -16,14 +16,49 @@ namespace Presentation.Controllers
             return Content($"Plain Text: {plainText}\nCipher Text: {cipherText}\nDecrypted Text: {decryptedText}");
         }
 
+        public IActionResult TestHybridEncryption()
+        {
+            AsymmetricParameters asymmetricParameters = AsymmetricEncryptionHelper.GenerateKeys();
+            string plainText = "Hello world";
+            using MemoryStream cipher = HybridEncryptionHelper.Encrypt(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(plainText)), asymmetricParameters.PublicKey);
+            using MemoryStream output = HybridEncryptionHelper.Decrypt(cipher, asymmetricParameters.PrivateKey);
+            string encryptedText = Convert.ToBase64String(cipher.ToArray());
+            string decryptedText = System.Text.Encoding.UTF8.GetString(output.ToArray());
+            return Content($"Plain Text: {plainText}\nCipher Text: {encryptedText}\nDecrypted Text: {decryptedText}");
+        }
+
         public IActionResult TestSymmetric()
         {
             string plainText = "Hello world";
-            var aesAlgorithm = Aes.Create();
+            Aes aesAlgorithm = Aes.Create();
             SymmetricParameters keys = SymmetricEncryptionHelper.GenerateSymmetricParameters(aesAlgorithm);
             string cipherText = SymmetricEncryptionHelper.Encrypt(plainText, keys, aesAlgorithm);
             string decryptedText = SymmetricEncryptionHelper.Decrypt(cipherText, keys, aesAlgorithm);
             return Content($"Plain Text: {plainText}\nCipher Text: {cipherText}\nDecrypted Text: {decryptedText}");
+        }
+
+        public IActionResult TestEnhancedSymmetric()
+        {
+            string plainText = "Hello world";
+            Aes aesAlgorithm = Aes.Create();
+            SymmetricParameters symmetricParameters = EnhancedSymmetricEncryptionHelper.GetSymmetricParameters(aesAlgorithm);
+            MemoryStream cipher = EnhancedSymmetricEncryptionHelper.Encrypt(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(plainText)), symmetricParameters, aesAlgorithm);
+            MemoryStream output = EnhancedSymmetricEncryptionHelper.Decrypt(cipher, symmetricParameters, aesAlgorithm);
+            string encryptedText = Convert.ToBase64String(cipher.ToArray());
+            string decryptedText = System.Text.Encoding.UTF8.GetString(output.ToArray());
+            return Content($"Plain Text: {plainText}\nCipher Text: {encryptedText}\nDecrypted Text: {decryptedText}");
+        }
+
+        public IActionResult TestEnhancedHybridEncryption()
+        {
+            string plainText = "Hello world";
+            Aes aesAlgorithm = Aes.Create();
+            AsymmetricParameters asymmetricParameters = AsymmetricEncryptionHelper.GenerateKeys();
+            MemoryStream cipher = EnhancedHybridEncryptionHelper.Encrypt(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(plainText)), asymmetricParameters.PublicKey);
+            MemoryStream output = EnhancedHybridEncryptionHelper.Decrypt(cipher, asymmetricParameters.PrivateKey);
+            string encryptedText = Convert.ToBase64String(cipher.ToArray());
+            string decryptedText = System.Text.Encoding.UTF8.GetString(output.ToArray());
+            return Content($"Plain Text: {plainText}\nCipher Text: {encryptedText}\nDecrypted Text: {decryptedText}");
         }
 
         public IActionResult HashWorksheet()

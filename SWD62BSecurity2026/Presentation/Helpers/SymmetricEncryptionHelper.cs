@@ -1,19 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 
 namespace Presentation.Helpers
 {
-    public class SymmetricParameters
-    {
-        public byte[] Key { get; set; }
-        public byte[] IV { get; set; }
-    }
-
     public class SymmetricEncryptionHelper
     {
         public static SymmetricParameters GenerateSymmetricParameters(SymmetricAlgorithm algorithm) 
         {
+            //Approach 1: We can generate a random key and IV using the selected algorithm.
+
             algorithm.GenerateKey();
             algorithm.GenerateIV();
 
@@ -21,8 +16,6 @@ namespace Presentation.Helpers
                 Key = algorithm.Key,
                 IV = algorithm.IV
             };
-
-            //Approach 1: We can generate a random key and IV using the selected algorithm.
         }
 
         public static SymmetricParameters GenerateSymmetricParameters(SymmetricAlgorithm algorithm, string userInput)
@@ -70,6 +63,21 @@ namespace Presentation.Helpers
 
             byte[] cipher = memoryStreamOutput.ToArray(); //Convert memory stream into an array of bytes.
             return Convert.ToBase64String(cipher); //Convert the cipher (array of bytes) into a Base64 string for easier storage and transmission.
+        }
+
+        public static string Encrypt(MemoryStream memoryStreamInput, SymmetricParameters keys, SymmetricAlgorithm symmetricAlgorithm)
+        {
+            symmetricAlgorithm.Key = keys.Key;
+            symmetricAlgorithm.IV = keys.IV;
+
+            MemoryStream memoryStreamOutput = new MemoryStream();
+            using(CryptoStream cryptoStream = new CryptoStream(memoryStreamInput, symmetricAlgorithm.CreateEncryptor(), CryptoStreamMode.Read))
+            {
+                cryptoStream.CopyTo(memoryStreamOutput);
+            }
+
+            byte[] cipher = memoryStreamOutput.ToArray();
+            return Convert.ToBase64String(cipher);
         }
 
         public static string Decrypt(string cipherText, SymmetricParameters keys, SymmetricAlgorithm algorithm) 
