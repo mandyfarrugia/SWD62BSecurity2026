@@ -1,0 +1,40 @@
+﻿@{
+    ViewData["Title"] = "Virtual Library Home";
+}
+
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h1 class="display-3 fw-bold text-primary">📚 Welcome to the Virtual Library</h1>
+        <p class="lead text-muted">Discover, explore, and download from a curated collection of books — all at your fingertips.</p>
+        <a asp-controller="Book" asp-action="Index" class="btn btn-lg btn-outline-primary mt-3">
+            🔍 Browse Library
+        </a>
+    </div>
+
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <h5 class="card-title">📖 Wide Selection</h5>
+                    <p class="card-text">Access a wide variety of books across different genres and categories.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <h5 class="card-title">🔐 Secure Access</h5>
+                    <p class="card-text">Your access and downloads are protected with encryption and permissions.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body">
+                    <h5 class="card-title">⚡ Fast & Easy</h5>
+                    <p class="card-text">Quickly find and download the books you love with just a few clicks.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

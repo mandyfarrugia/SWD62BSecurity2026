@@ -1,0 +1,54 @@
+﻿@model IEnumerable<Presentation.Models.ViewModels.BookViewModel>
+
+@{
+    ViewData["Title"] = "📚 Library Catalog";
+}
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">📚 Library Catalog</h2>
+        <a asp-action="Create" class="btn btn-outline-success">
+            ➕ Add Book
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle shadow-sm border rounded-3 overflow-hidden">
+            <thead class="table-light">
+                <tr class="text-secondary text-uppercase small">
+                    <th>📖 Title</th>
+                    <th>✍️ Author</th>
+                    <th>📅 Year</th>
+                    <th>🏷️ Category</th>
+                    <th class="text-end">⚙️ Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr class="border-bottom">
+                        <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                        <td>@Html.DisplayFor(modelItem => item.Author)</td>
+                        <td>@Html.DisplayFor(modelItem => item.Year)</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                @Html.DisplayFor(modelItem => item.CategoryName)
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Download" asp-route-bookId="@item.EncryptedId" class="btn btn-sm btn-outline-success me-1">
+                                ⬇️ Download
+                            </a>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-action="Delete" asp-route-id="@item.EncryptedId" class="btn btn-sm btn-outline-danger">
+                                    🗑️ Delete
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

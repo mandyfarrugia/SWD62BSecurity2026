@@ -1,0 +1,41 @@
+﻿@{
+    ViewData["Title"] = "About the Virtual Library";
+}
+
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">📚 About Our Virtual Library</h1>
+        <p class="lead text-muted">
+            Empowering readers through a secure and convenient digital library experience.
+        </p>
+    </div>
+
+    <div class="row align-items-center">
+        <div class="col-md-6 mb-4">
+            <img src="https://images.squarespace-cdn.com/content/v1/5876279bbebafb82a7c81c00/f4e17d6a-81db-4a04-9bda-63c86c517778/IMG_3105.jpg" alt="Virtual Library" class="img-fluid rounded shadow-sm" />
+        </div>
+        <div class="col-md-6 mb-4">
+            <h3 class="fw-bold">Our Mission</h3>
+            <p>
+                Our Virtual Library is designed to give students, educators, and lifelong learners instant access to a curated collection of digital books.
+                We believe in providing a seamless, secure, and inclusive reading experience for everyone.
+            </p>
+
+            <h4 class="fw-semibold mt-4">🔐 Security & Access</h4>
+            <p>
+                With advanced encryption, role-based access control, and digital signing, we ensure that your reading experience is not only enjoyable but also protected.
+            </p>
+
+            <h4 class="fw-semibold mt-4">📈 Always Growing</h4>
+            <p>
+                Our library is constantly expanding — from academic textbooks to fiction classics, there’s always something new to discover.
+            </p>
+        </div>
+    </div>
+
+    <div class="mt-5 text-center">
+        <a asp-controller="Book" asp-action="Index" class="btn btn-outline-primary btn-lg">
+            📖 Explore the Collection
+        </a>
+    </div>
+</div>
