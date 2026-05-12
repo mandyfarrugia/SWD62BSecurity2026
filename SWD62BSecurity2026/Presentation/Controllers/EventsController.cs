@@ -4,6 +4,7 @@ using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Presentation.ActionFilters;
+using Presentation.Helpers;
 using Presentation.Models.ViewModels;
 
 namespace Presentation.Controllers
@@ -23,14 +24,14 @@ namespace Presentation.Controllers
                 .GetAllEvents()
                 .Where(@event => @event.Public)
                 .Select(@event => new EventListViewModel()
-                    {
-                        Id = @event.Id,
-                        Name = @event.Name,
-                        Price = @event.Price,
-                        Public = @event.Public,
-                        MaximumTickets = @event.MaximumTickets,
-                        FilePath = @event.FilePath,
-                    })
+                {
+                    Id = @event.Id,
+                    Name = @event.Name,
+                    Price = @event.Price,
+                    Public = @event.Public,
+                    MaximumTickets = @event.MaximumTickets,
+                    FilePath = @event.FilePath,
+                })
                 .ToList();
 
             return View(eventListViewModel);
@@ -92,7 +93,7 @@ namespace Presentation.Controllers
 
                         if (!jpgSignatureMatch && !pngSignatureMatch)
                         {
-                            ModelState.AddModelError("File", "The file content does not match the expected file format from JPG and PNG.");
+                            ModelState.AddModelError("File", "The file content does not match the expected file format for JPG and PNG.");
                             return View(createEventViewModel);
                         }
                     }
@@ -139,7 +140,7 @@ namespace Presentation.Controllers
                 this._eventsRepository.CreateEvent(newEvent);
                 TempData["success"] = "Event created successfully!";
             }
-            catch(DuplicateEventEntryException deee)
+            catch (DuplicateEventEntryException deee)
             {
                 ModelState.AddModelError("Name", deee.Message);
                 return View(createEventViewModel);
@@ -150,11 +151,12 @@ namespace Presentation.Controllers
                 ModelState.AddModelError("", "An error occurred while creating the event. Please try again.");
                 return View(createEventViewModel);
             }
-            
+
             return RedirectToAction(nameof(Index));
         }
 
-        //An action filter is required in case you need to verify whether the user who is an organiser is actually the organiser of the event to be deleted, then you have to use and apply an authorisation filter.
+        /* An action filter is required in case you need to verify whether the user who is an organiser is actually the organiser of the event to be deleted, 
+         * then you have to use and apply an authorisation filter. */
         [HasEventOrganiserPermission]
         [Authorize(Roles = "organiser")] //Distinguish between an authenticated user and an anonymous user.
         public IActionResult Delete(int id)
@@ -162,6 +164,20 @@ namespace Presentation.Controllers
             this._eventsRepository.DeleteEvent(id);
             TempData["success"] = "Event deleted successfully";
             return RedirectToAction(nameof(Index));
+        }
+
+        public IActionResult Details(string id)
+        {
+            SymmetricParameters symmetricParameters = Presentation.Helpers.SymmetricEncryptionHelper.GenerateSymmetricParameters(
+                System.Security.Cryptography.Aes.Create(),
+                "pa$$w0rd");
+
+            string decryptedId = Presentation.Helpers.SymmetricEncryptionHelper.Decrypt(id, symmetricParameters, System.Security.Cryptography.Aes.Create());
+
+            int decryptedIdAsInteger = Convert.ToInt32(decryptedId);
+
+            Event @event = this._eventsRepository.GetAllEvents().SingleOrDefault(@event => @event.Id == decryptedIdAsInteger);
+            return View(@event);
         }
 
         public IActionResult Search(string searchTerm)

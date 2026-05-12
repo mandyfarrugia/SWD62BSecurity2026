@@ -1,5 +1,4 @@
-﻿using Presentation.CustomValidators;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Presentation.Models.ViewModels
 {

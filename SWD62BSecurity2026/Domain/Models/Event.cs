@@ -28,3 +28,4 @@ namespace Domain.Models
         public string Organiser { get; set; }
     }
 }
+

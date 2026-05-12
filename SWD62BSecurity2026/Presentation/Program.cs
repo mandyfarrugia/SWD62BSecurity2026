@@ -49,8 +49,8 @@ namespace Presentation
             builder.Services.AddAuthentication()
             .AddGoogle(options =>
             {
-                options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
-                options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+                options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? throw new InvalidOperationException("Unable to find Google ClientId!");
+                options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? throw new InvalidOperationException("Unable to find Google ClientSecret!");
             }); //Do not chain AddCookie() to AddAuthentication() when using external authentication as it may interfere with the default cookie authentication scheme used by Identity.
 
             /* Never log to a database or the console, instead log to a file or the cloud. 
@@ -65,6 +65,9 @@ namespace Presentation
 
             builder.Host.UseSerilog(logConfiguration);
 
+            /* Resort to the below if the above does not work for some reason, 
+             * but be aware that this will cause the logger to be disposed when the host is built, 
+             * which may lead to issues with logging later on in the application lifecycle. */
             //builder.Host.ConfigureLogging(logging =>
             //{
             //    logging.ClearProviders();

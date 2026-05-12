@@ -1,10 +1,31 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Presentation.Helpers;
+using System.Security.Cryptography;
 
 namespace Presentation.Controllers
 {
     public class HashingTestController : Controller
     {
+
+        public IActionResult TestAsymmetric()
+        {
+            string plainText = "Hello world";
+            AsymmetricParameters asymmetricParameters = AsymmetricEncryptionHelper.GenerateKeys();
+            string cipherText = AsymmetricEncryptionHelper.Encrypt(plainText, asymmetricParameters.PublicKey);
+            string decryptedText = AsymmetricEncryptionHelper.Decrypt(cipherText, asymmetricParameters.PrivateKey);
+            return Content($"Plain Text: {plainText}\nCipher Text: {cipherText}\nDecrypted Text: {decryptedText}");
+        }
+
+        public IActionResult TestSymmetric()
+        {
+            string plainText = "Hello world";
+            var aesAlgorithm = Aes.Create();
+            SymmetricParameters keys = SymmetricEncryptionHelper.GenerateSymmetricParameters(aesAlgorithm);
+            string cipherText = SymmetricEncryptionHelper.Encrypt(plainText, keys, aesAlgorithm);
+            string decryptedText = SymmetricEncryptionHelper.Decrypt(cipherText, keys, aesAlgorithm);
+            return Content($"Plain Text: {plainText}\nCipher Text: {cipherText}\nDecrypted Text: {decryptedText}");
+        }
+
         public IActionResult HashWorksheet()
         {
             //Never implement your own cryptographic/hashing algorithm.

@@ -1,4 +1,5 @@
-﻿@model IEnumerable<Presentation.Models.ViewModels.EventListViewModel>
+﻿@using Presentation.Helpers
+@model IEnumerable<Presentation.Models.ViewModels.EventListViewModel>
 
 @{
     ViewData["Title"] = "Events";
@@ -60,7 +61,14 @@ else
                         <td>@Html.DisplayFor(modelItem => item.MaximumTickets)</td>
                         <td>
                             <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-primary"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-primary"><i class="fa-solid fa-eye"></i> Details</a>
+                            @*  <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-primary"><i class="fa-solid fa-eye"></i> Details</a> *@
+
+                            @{
+                                SymmetricParameters parameters = SymmetricEncryptionHelper.GenerateSymmetricParameters(System.Security.Cryptography.Aes.Create(), "pa$$w0rd");
+                                string encryptedId = SymmetricEncryptionHelper.Encrypt(item.Id.ToString(), parameters, System.Security.Cryptography.Aes.Create());
+                            }
+                            <a href="/Events/Details?id=@encryptedId" class="btn btn-primary"><i class="fa-solid fa-eye"></i> Details</a>
+
                             <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Delete</a>
                         </td>
                         <td>

@@ -1,7 +1,5 @@
-﻿using DataAccess.Repositories;
-using Domain.Models;
+﻿using Domain.Models;
 using Presentation.CustomValidators;
-using System.ComponentModel.DataAnnotations;
 
 namespace Presentation.Models.ViewModels
 {

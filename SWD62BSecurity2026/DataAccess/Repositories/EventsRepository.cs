@@ -20,8 +20,8 @@ namespace DataAccess.Repositories
         }
 
         /* This is a method we must ensure can be run by the lesser privileged database login.
-         * This ensures that if an SQL Injection attack is successfully, the damage is limited as the attacker will be using a lesser privileged login where DELETE or CREATE are restricted.
-         * limit damage especially if this is run by an anonymous user) */
+         * This ensures that if an SQL Injection attack is successfully, the damage is limited as the attacker will be using a lesser privileged login 
+         * where DELETE or CREATE are restricted. This limits damage especially if this is run by an anonymous user. */
         public List<Event> GetAllEvents()
         {
             using LeastPrivilegedUserTicketDbContext? leastPrivilegedUser = this._leastPrivilegedUserContextFactory.CreateDbContext();
