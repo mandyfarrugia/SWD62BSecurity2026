@@ -4,7 +4,7 @@ using Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Presentation.ActionFilters;
-using Presentation.Helpers;
+using Presentation.Helpers.Cryptography.SymmetricEncryption;
 using Presentation.Models.ViewModels;
 
 namespace Presentation.Controllers
@@ -168,11 +168,11 @@ namespace Presentation.Controllers
 
         public IActionResult Details(string id)
         {
-            SymmetricParameters symmetricParameters = Presentation.Helpers.SymmetricEncryptionHelper.GenerateSymmetricParameters(
+            SymmetricParameters symmetricParameters = SymmetricEncryptionHelper.GenerateSymmetricParameters(
                 System.Security.Cryptography.Aes.Create(),
                 "pa$$w0rd");
 
-            string decryptedId = Presentation.Helpers.SymmetricEncryptionHelper.Decrypt(id, symmetricParameters, System.Security.Cryptography.Aes.Create());
+            string decryptedId = SymmetricEncryptionHelper.Decrypt(id, symmetricParameters, System.Security.Cryptography.Aes.Create());
 
             int decryptedIdAsInteger = Convert.ToInt32(decryptedId);
 

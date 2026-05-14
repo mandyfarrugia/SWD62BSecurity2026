@@ -1,5 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Presentation.Helpers;
+using Presentation.Helpers.Cryptography.AsymmetricEncryption;
+using Presentation.Helpers.Cryptography.DigitalSigning;
+using Presentation.Helpers.Cryptography.Hashing;
+using Presentation.Helpers.Cryptography.HybridEncryption;
+using Presentation.Helpers.Cryptography.SymmetricEncryption;
 using System.Security.Cryptography;
 
 namespace Presentation.Controllers
@@ -59,6 +63,35 @@ namespace Presentation.Controllers
             string encryptedText = Convert.ToBase64String(cipher.ToArray());
             string decryptedText = System.Text.Encoding.UTF8.GetString(output.ToArray());
             return Content($"Plain Text: {plainText}\nCipher Text: {encryptedText}\nDecrypted Text: {decryptedText}");
+        }
+
+        public IActionResult TestDigitalSigning([FromServices] IWebHostEnvironment host)
+        {
+            AsymmetricParameters asymmetricParameters = AsymmetricEncryptionHelper.GenerateKeys();
+            MemoryStream fileData = new MemoryStream();
+            string file = $@"{host.ContentRootPath}\uploads\demo1.txt";
+
+            using (FileStream fileStream = new FileStream(file, FileMode.Open, FileAccess.Read))
+            {
+                fileStream.CopyTo(fileData);
+            }
+
+            fileData.Position = 0;
+
+            string signature = DigitalSigningHelperV1.DigitallySignData(fileData, asymmetricParameters.PrivateKey);
+
+            //System.IO.File.AppendAllText(file, "Oops, it seems like I tampered with the file..."); //<- Use this line of code to tamper with a text file.
+
+            MemoryStream fileData2 = new MemoryStream();
+            using (FileStream fileStream = new FileStream(file, FileMode.Open, FileAccess.Read))
+            {
+                fileStream.CopyTo(fileData2);
+            }
+
+            fileData2.Position = 0;
+
+            bool isOriginal = DigitalSigningHelperV1.VerifyDigitalSignature(fileData2, signature, asymmetricParameters.PublicKey);
+            return Content($"File: {file}\nSignature: {signature}\nVerification Result: {isOriginal}");
         }
 
         public IActionResult HashWorksheet()

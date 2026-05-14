@@ -2,7 +2,7 @@ using DataAccess.Context;
 using DataAccess.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Presentation.Helpers;
+using Presentation.Helpers.RoleManagement;
 using Serilog;
 
 namespace Presentation
